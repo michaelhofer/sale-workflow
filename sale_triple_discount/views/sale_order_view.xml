@@ -24,11 +24,13 @@
                 />
                 <field
                     name="discount2"
+                    string="Disc. 2 (%)"
                     optional="show"
                     groups="sale.group_discount_per_so_line"
                 />
                 <field
                     name="discount3"
+                    string="Disc. 3 (%)"
                     optional="show"
                     groups="sale.group_discount_per_so_line"
                 />

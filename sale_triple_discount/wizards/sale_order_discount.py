@@ -10,7 +10,7 @@ class SaleOrderDiscount(models.TransientModel):
     def action_apply_discount(self):
         res = super().action_apply_discount()
         if self.discount_type == "sol_discount":
-            self.sale_order_id.order_line.write(
+            self._get_discountable_order_lines().write(
                 {
                     "discount1": self.discount_percentage * 100,
                     "discount2": 0,

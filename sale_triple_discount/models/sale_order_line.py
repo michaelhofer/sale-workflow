@@ -5,7 +5,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 
@@ -51,7 +51,7 @@ class SaleOrderLine(models.Model):
         # FIXME: see https://github.com/OCA/sale-workflow/issues/3649
         if any(rec.discounting_type == "additive" for rec in self):
             raise ValidationError(
-                _(
+                self.env._(
                     "Additive discount type is not fully implemented."
                     " See https://github.com/OCA/sale-workflow/issues/3649 "
                 )
@@ -65,8 +65,12 @@ class SaleOrderLine(models.Model):
             return self._multiplicative_discount()
         else:  # pragma: no cover
             raise ValidationError(
-                _("Sale order line %(name)s has unknown discounting type %(dic_type)s")
-                % {"name": self.name, "disc_type": self.discounting_type}
+                self.env._(
+                    "Sale order line %(name)s has unknown discounting type "
+                    "%(disc_type)s",
+                    name=self.name,
+                    disc_type=self.discounting_type,
+                )
             )
 
     def _additive_discount(self):  # pragma: no cover
@@ -88,7 +92,7 @@ class SaleOrderLine(models.Model):
 
     @api.depends(
         lambda self: self._get_multiple_discount_field_names()
-        + ["product_id", "product_uom", "product_uom_qty"]
+        + ["product_id", "product_uom_id", "product_uom_qty"]
     )
     def _compute_discount(self):
         # Base Odoo just continues instead of assigning to 0 in this case
@@ -98,7 +102,9 @@ class SaleOrderLine(models.Model):
             "product.pricelist.item"
         ]._is_discount_feature_enabled()
         for line in self:
-            if not (line.order_id.pricelist_id and discount_enabled):
+            if not (
+                line.order_id.pricelist_id and discount_enabled and line.product_uom_id
+            ):
                 line.discount = 0
         res = super()._compute_discount()
         if self.env.context.get("skip_triple_discount"):
@@ -107,7 +113,7 @@ class SaleOrderLine(models.Model):
             line.discount = line._get_final_discount()
         return res
 
-    @api.depends("product_id", "product_uom", "product_uom_qty")
+    @api.depends("product_id", "product_uom_id", "product_uom_qty")
     def _compute_discount1(self):
         # Calculate the original super()s discount and drag it to discount1
         # This is primarily for the field to visually update when creating new lines
